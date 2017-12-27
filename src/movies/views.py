@@ -1,14 +1,22 @@
 # Create your views here.
+from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 from django.shortcuts import render
+from django.urls import reverse
+from django.views import View
+from django.contrib import messages
+from django.views.generic import ListView
 
 from movies.models import Movie
+from movies.forms import MovieForm
 
 
+@login_required
 def hello_world(request):
     return HttpResponse("Hello World!")
 
 
+@login_required
 def home(request):
     latest_movies = Movie.objects.all().order_by("-release_date")
     context = {'movies': latest_movies}
@@ -25,3 +33,32 @@ def movie_detail(request, pk):
         context = {'movie': movie}
         return render(request, "movie_detail.html", context)
 
+
+class CreateMovieView(View):
+
+    def get(self, request):
+        form = MovieForm()
+        return render(request, "movie_form.html", {"form": form})
+
+    def post(self, request):
+        movie = Movie()
+        movie.user = request.user  # Asignamos el usuario autenticado
+        form = MovieForm(request.POST, instance=movie)
+        if form.is_valid():
+            movie = form.save()
+            form = MovieForm()
+            url = reverse("movie_detail_page", args=[movie.pk])
+            message = "Película guardada!"
+            message += "<a href='{0}'>View</a>".format(url)
+            messages.success(request, message)
+        return render(request, "movie_form.html", {"form": form})
+
+
+class MyMoviesView(ListView):
+
+    model = Movie
+    template_name = "my_movies.html"
+
+    def get_queryset(self):
+        queryset = super(MyMoviesView, self).get_queryset()
+        return queryset.filter(user=self.request.user)

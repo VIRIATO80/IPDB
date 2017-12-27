@@ -1,17 +1,31 @@
-from django.shortcuts import render
-from django.contrib.auth import authenticate
+from django.shortcuts import render, redirect
+from django.contrib.auth import authenticate, login as django_login, logout as django_logout
+from django.views import View
+
+from users.forms import LoginForm
 
 
-def login(request):
-    if request.method == 'POST':
-        username = request.POST["login_username"]
-        password = request.POST["login_password"]
-        authenticated_user = authenticate(username=username, password=password)
-        if len(authenticated_user) > 0:
-            print("Usuario correcto")
-        else:
-            print("Usuario incorrecto")
-    else:
-        return render(request, "404.html")
+class LoginView(View):
 
-    return render(request, "login_form.html")
+    def get(self, request):
+        context = {'form': LoginForm()}
+        return render(request, "login_form.html", context)
+
+    def post(self, request):
+        form = LoginForm(request.POST)
+        if form.is_valid():
+            username = form.cleaned_data.get("login_username")
+            password = form.cleaned_data.get("login_password")
+            authenticated_user = authenticate(username=username, password=password)
+            if authenticated_user and authenticated_user.is_active:
+                django_login(request, authenticated_user)
+                redirect_to = request.GET.get("next", "home_page")
+                return redirect(redirect_to)
+            else:
+                form.add_error(None, "Usuario incorrecto o inactivo")
+        return render(request, "login_form.html", {'form': form})
+
+
+def logout(request):
+    django_logout(request)
+    return redirect("home_page")
