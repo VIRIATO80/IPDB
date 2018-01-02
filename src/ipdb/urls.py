@@ -17,6 +17,7 @@ from django.contrib import admin
 from django.urls import path
 
 from movies.views import home, movie_detail, CreateMovieView, MyMoviesView
+from users.api import UserListAPI, UserDetailAPI
 from users.views import logout, LoginView
 
 urlpatterns = [
@@ -29,4 +30,9 @@ urlpatterns = [
     path('logout/', logout, name="logout_page"),
 
     path('admin/', admin.site.urls),
+
+    # URLS para el API REST
+    path('api/1.0/users/<int:pk>', UserDetailAPI.as_view(), name='api_user_detail'),
+    path('api/1.0/users/', UserListAPI.as_view(), name='api_user_list')
+
 ]

@@ -58,7 +58,3 @@ class MyMoviesView(ListView):
 
     model = Movie
     template_name = "my_movies.html"
-
-    def get_queryset(self):
-        queryset = super(MyMoviesView, self).get_queryset()
-        return queryset.filter(user=self.request.user)
